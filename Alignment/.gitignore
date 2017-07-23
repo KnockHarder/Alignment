@@ -1,0 +1,5 @@
+*.o
+*.out
+align
+seqTest
+backup15_07_15_18/
