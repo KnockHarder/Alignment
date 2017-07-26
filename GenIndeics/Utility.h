@@ -10,6 +10,7 @@
 #define    DEGREE   65536
 #define    MASK48   281474976710655
 #define    MASK32   4294967295
+#define    COMPMASK   0xaaaaaaaaaaaaaaaa
 #define    MINNT    16      // the vaule of MAXNT minus MINNT can`t be larger than or equal to 16
 #define    MAXNT    27      // can`t be changed an larger number
 #define    SIGNBITS 5
