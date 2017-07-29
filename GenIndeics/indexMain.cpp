@@ -4,10 +4,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-char	FirNor[FILENAME_MAX], FirRev[FILENAME_MAX];
-char	SecNor[FILENAME_MAX], SecRev[FILENAME_MAX];
-
-char	MidNor[FILENAME_MAX], MidRev[FILENAME_MAX];
+char	FirName[4][FILENAME_MAX];
+char	SecName[4][FILENAME_MAX];
+char	MidName[4][FILENAME_MAX];
 
 const char*   getFileName(const char* fullPath);
 
@@ -17,140 +16,174 @@ void	saveNames(FILE *fp);
 
 int	main(int argc, char** argv)
 {/*{{{*/
-  // check arguments
+
+    // check arguments
+    /*{{{*/
 	if (argc != 3)
-	{/*{{{*/
+	{
 		printf("Usage: Command  referfile  namesfile\n");
 		return -1;
-	}/*}}}*/
+	}
+    /*}}}*/
 
-  // declear variables
-	FILE    *referf, *namesf, *midf;/*{{{*/
-	referf = namesf = midf = 0;/*}}}*/
+    // declear variables
+    /*{{{*/
+	FILE    *referf, *namesf, *midf;
+	referf = namesf = midf = 0;
+    /*}}}*/
 
-  //check arguments
-//  if (fopen_s(&referf, argv[1], "rt") != 0  ||  referf == NULL)
+    // check arguments
+    // if (fopen_s(&referf, argv[1], "rt") != 0  ||  referf == NULL)
+    /*{{{*/
     if ( ( referf = fopen( argv[1], "rt") )  ==  0 )
-	{/*{{{*/
+	{
 		printf("File Open Error: Can`t open file '%s' successfully!\n", argv[1]);
 		return -1;
-	}/*}}}*/
+	}
 
-//  if (fopen_s(&namesf, argv[2], "wt") != 0  ||  namesf == NULL)
+    //if (fopen_s(&namesf, argv[2], "wt") != 0  ||  namesf == NULL)
     if ( ( namesf = fopen( argv[2], "wt") )  ==  0 )
-	{/*{{{*/
+	{
 		printf("File Open Error: Can`t open file '%s' successfully!\n", argv[2]);
 		return -1;
-	}/*}}}*/
+	}
+    /*}}}*/ 
 
-  // generate files names
+    // generate files names
 	genNames(argv[1]);
   
-  // generate indices
-	  // fir indices, get mid files 
-	FIR::set_fir(referf, MidNor, MidRev);
+    // make indices
+    /*{{{*/
+    // fir indices, get mid files 
+	FIR::set_fir(referf, MidName);
 	
-	  // forward direction sec indices, get final files 
-//  if (fopen_s(&midf, MidNor, "rb") != 0  ||  midf  == NULL)
-    if ( ( midf = fopen( MidNor, "rb") )  ==  0 )
-	{/*{{{*/
-		printf("File Open Error : Can`t open generated file '%s' successfully!\n", MidNor);
-		return false;
-	}/*}}}*/
+    // sec indices, get final files 
+    for( int i = 0; i < 4; i ++ )
+    {
+        // if (fopen_s(&midf, MidNor, "rb") != 0  ||  midf  == NULL)
+        if ( ( midf = fopen( MidName[i], "rb") )  ==  0 )
+        {
+            printf("File Open Error : Can`t open generated file '%s' successfully!\n", MidName[i]);
+            return false;
+        }
 
-	SEC::set_sec(midf, FirNor, SecNor);
-	
-	  // backward direction sec indices, get final files 
-	fclose(midf);
-    midf = 0;
-//  if (fopen_s(&midf, MidRev, "rb") != 0  ||  midf == NULL)
-    if ( ( midf = fopen( MidRev, "rb") )  ==  0 )
-	{/*{{{*/
-		printf("File Open Error : Can`t open generated file '%s' successfully!\n", MidNor);
-		return false;
-	}/*}}}*/
-	SEC::set_sec(midf, FirRev, SecRev);
+        SEC::set_sec(midf, FirName[i], SecName[i]);
 
-  // save names
+        fclose(midf);
+        midf = 0;
+    }
+    /*}}}*/
+
+    // save names
 	saveNames(namesf);
 
-  // close files 
-	fclose(referf);/*{{{*/
+    // close files 
+    /*{{{*/
+	fclose(referf);
 	fclose(namesf);
-	fclose(midf);
-    referf = namesf = midf = 0;
-/*}}}*/
+    referf = namesf = 0;
+    /*}}}*/
+
 	return 0;
 }/*}}}*/
 
 void	genNames(const char* ref_fname)
 {/*{{{*/
-	memset(FirNor, 0, FILENAME_MAX);	memset(FirRev, 0, FILENAME_MAX);
-	memset(SecNor, 0, FILENAME_MAX);	memset(SecRev, 0, FILENAME_MAX);
-	memset(MidNor, 0, FILENAME_MAX);	memset(MidRev, 0, FILENAME_MAX);
-	
-	char	preFix[FILENAME_MAX];
 
-  // cpy the file name
+    // declear variables
+    /*{{{*/
+	char	prefix[FILENAME_MAX], postfix[FILENAME_MAX];
 	char	filename[FILENAME_MAX];
-//  strcpy_s(filename, FILENAME_MAX, getFileName(ref_fname));
+    /*}}}*/
+
+    // get the file name
+    // strcpy_s(filename, FILENAME_MAX, getFileName(ref_fname));
     strcpy(filename, getFileName(ref_fname));
 
-  // mid files names
-	memset(preFix, 0, FILENAME_MAX);
-//  strcat_s(preFix, FILENAME_MAX, TempFilePath);
-    strcat(preFix, TempFilePath);
+    // get directory
+    // strcpy_s(prefix, FILENAME_MAX, TempFilePath);
+    strcpy(prefix, TempFilePath);
 
-//  strcat_s(MidNor, FILENAME_MAX, preFix);	strcat_s(MidNor, FILENAME_MAX, "mid_nor");
-//  strcat_s(MidRev, FILENAME_MAX, preFix);	strcat_s(MidRev, FILENAME_MAX, "mid_rev");
-    strcat(MidNor, preFix);	strcat(MidNor, "mid_nor");
-    strcat(MidRev, preFix);	strcat(MidRev, "mid_rev");
+    // generate midfile names
+    /*{{{*/
+    // strcpy_s(MidNor, FILENAME_MAX, prefix);	strcat_s(MidNor, FILENAME_MAX, "mid_nor");
+    // strcpy_s(MidRev, FILENAME_MAX, prefix);	strcat_s(MidRev, FILENAME_MAX, "mid_rev");
+    for( int i = 0; i < 4; i ++ )
+    {
+        sprintf(postfix, "%d%d", i/2, i%2);
 
-  // index files names
-	memset(preFix, 0, FILENAME_MAX);
-/*
-	strcat_s(preFix, FILENAME_MAX, IndicesPath);
-	strcat_s(preFix, FILENAME_MAX, strtok_s(filename, ".", &contex));
-	strcat_s(preFix, FILENAME_MAX, "/");
-	strcat_s(preFix, FILENAME_MAX, strtok_s(filename, ".", &contex));
+        strcpy(MidName[i], prefix);
+        strcat(MidName[i], "mid_");
+        strcat(MidName[i], postfix);
+    }
+    /*}}}*/
 
-	strcat_s(FirNor, FILENAME_MAX, preFix);	strcat_s(FirNor, FILENAME_MAX, "_fir_nor");
-	strcat_s(SecNor, FILENAME_MAX, preFix);	strcat_s(SecNor, FILENAME_MAX, "_sec_nor");
-	strcat_s(SecRev, FILENAME_MAX, preFix);	strcat_s(SecRev, FILENAME_MAX, "_sec_rev");
-	strcat_s(FirRev, FILENAME_MAX, preFix);	strcat_s(FirRev, FILENAME_MAX, "_fir_rev");
-*/
+    // generate  index-files` names
+    /*{{{*/
 
-	strcat(preFix, IndicesPath);
-	strcat(preFix, strtok(filename, "."));
-	strcat(preFix, "/");
+	// strcpy_s(prefix, FILENAME_MAX, IndicesPath);
+	// strcat_s(prefix, FILENAME_MAX, strtok_s(filename, ".", &contex));
+	// strcat_s(prefix, FILENAME_MAX, "/");
+	// strcat_s(prefix, FILENAME_MAX, strtok_s(filename, ".", &contex));
+
+	// strcat_s(FirNor, FILENAME_MAX, prefix);	strcat_s(FirNor, FILENAME_MAX, "_fir_nor");
+	// strcat_s(SecNor, FILENAME_MAX, prefix);	strcat_s(SecNor, FILENAME_MAX, "_sec_nor");
+	// strcat_s(SecRev, FILENAME_MAX, prefix);	strcat_s(SecRev, FILENAME_MAX, "_sec_rev");
+	// strcat_s(FirRev, FILENAME_MAX, prefix);	strcat_s(FirRev, FILENAME_MAX, "_fir_rev");
+
+	strcpy(prefix, IndicesPath);
+	strcat(prefix, strtok(filename, "."));
+	strcat(prefix, "/");
     
-    if( access( preFix, F_OK ) == -1 )
-        if( mkdir( preFix, S_IRWXU )  == -1 )
-            printf( "Failed to create dirctory - %s\n", preFix );
+    // create a directory for the index files
+    /*{{{*/
+    if( access( prefix, F_OK ) == -1 )
+        if( mkdir( prefix, S_IRWXU )  == -1 )
+            printf( "Failed to create dirctory - %s\n", prefix );
+    /*}}}*/
 
-	strcat(preFix, strtok(filename, "."));
+	strcat(prefix, strtok(filename, "."));
 
-	strcat(FirNor, preFix);	strcat(FirNor, "_fir_nor");
-	strcat(SecNor, preFix);	strcat(SecNor, "_sec_nor");
-	strcat(SecRev, preFix);	strcat(SecRev, "_sec_rev");
-	strcat(FirRev, preFix);	strcat(FirRev, "_fir_rev");
+    for( int i = 0; i < 4; i ++ )
+    {
+        sprintf(postfix, "%d%d", i/2, i%2);
+        
+	    strcpy(FirName[i], prefix);
+        strcat(FirName[i], "_fir_");
+        strcat(FirName[i], postfix);
+        
+	    strcpy(SecName[i], prefix);
+        strcat(SecName[i], "_sec_");
+        strcat(SecName[i], postfix);
+    }
+    /*}}}*/
+
 }/*}}}*/
 
 void	saveNames(FILE *fp)
 {/*{{{*/
-	fputs(FirNor, fp);	fputs("\n", fp);	;fputs(FirRev, fp);	fputs("\n",  fp);
-	fputs(SecNor, fp);	fputs("\n", fp);	;fputs(SecRev, fp);	fputs("\n",  fp);
+    for( int i = 0; i < 4; i ++ )
+    {
+        fputs(FirName[i], fp);	
+        fputs("\n", fp);
+    }
+
+    for( int i = 0; i < 4; i ++ )
+    {
+        fputs(SecName[i], fp);
+        fputs("\n", fp);
+    }
 }/*}}}*/
 
 const char*	getFileName( const char* fullPath)
 {/*{{{*/
-	char	*fname = 0, *rst = 0,
-		fullname[FILENAME_MAX];
+	char	*fname = 0, *rst = 0, \
+		    fullname[FILENAME_MAX];
 
-//  strcpy_s(fullname, FILENAME_MAX, fullPath);
+    // strcpy_s(fullname, FILENAME_MAX, fullPath);
     strcpy(fullname, fullPath);
 
-//  fname = strtok_s(fullname, "/\\", &temp);
+    // fname = strtok_s(fullname, "/\\", &temp);
 	rst = fname = strtok(fullname, "/\\");
 
 	while ( fname = strtok(0, "/\\") )
