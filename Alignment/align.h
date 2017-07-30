@@ -12,11 +12,10 @@ namespace   ALI
 	extern	RECORD       *fir_index;
 	extern	RECORD       *sec_index;
 	extern	uint64_t     *start_loc;
-	extern	char    fin_fname[2][MAXFNAME];
-	extern	char    sin_fname[2][MAXFNAME];
-	extern	char    seq_fname[2][MAXFNAME];
+	extern	char*   fin_fname[2];
+	extern	char*   sin_fname[2];
 
-	void    ali_init(char filenames[6][MAXFNAME]);
+    void    ali_init(char indicesFnames[8][MAXFNAME], char seqFames[2][MAXFNAME]);
 
 	void    ali_end();
 
@@ -28,9 +27,9 @@ namespace   ALI
 
 	int    cmp_seq(const uint64_t &refer, const uint64_t &seq);
 
-	void    writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE*  rsf, bool isrev);
+    void    writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE*  rsf, int flag, bool isrev);
 
-	void	alignment(char filenames[6][MAXFNAME], const char* rsf_fname);
+	void    alignment(char indices_fnames[8][MAXFNAME], char seq_fname[2][MAXFNAME], const char* rsf_fname);
 
 };
 
