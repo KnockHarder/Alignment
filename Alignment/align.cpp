@@ -123,22 +123,36 @@ int     ALI::cmp_seq(const uint64_t &refer, const uint64_t &seq)
 		return -1;
 }/*}}}*/
 
-void    ALI::writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE*  rsf, int flag, bool isrev)
+void    ALI::writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE*  rsf, int flag, int isrev)
 {/*{{{*/
 
     // declears variables and init
     /*{{{*/
-	char*   refstr = (char*)malloc(sizeof(char) * (MAXNT * 2 + 10));
+    char    str[40];
+	char*   term = (char*)malloc(sizeof(char) * 200);
+	char*   temp = 0;
+    int     hitStart , hitEnd, queryStart, queryEnd;
+    
+	char*   refstr = (char*)malloc(sizeof(char) * (MAXNT * 1));
 	char*   seqstr = (char*)malloc(sizeof(char) * (MAXNT + 1));
-	char*   temp;
 	int     length;
+	int     pad, reserv, k;
 
-	int     pad = (refer >> SIGNBITS) & SIGNMASK;
-	int     reserv = refer & SIGNMASK;
     /*}}}*/
 
-    // get the hist sequence
+    // get the hist sequence and the match part
     /*{{{*/
+
+	pad = (refer >> SIGNBITS) & SIGNMASK;
+	reserv = refer & SIGNMASK;
+    k = seq.seq & SIGNMASK;
+
+
+    if( reserv > k )
+        hitEnd = queryEnd = MAXNT - reserv;
+    else
+        hitEnd = queryEnd = MAXNT - k;
+
 
     // recovery for complementary sequence
     /*{{{*/
@@ -150,10 +164,14 @@ void    ALI::writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE* 
         temp = toString(refer);
     /*}}}*/
 
-    // get the hit sequence and get it`s length
+    // get the hit sequence
     /*{{{*/
 	if (pad < 16) // padded or normal
 	{
+        hitStart = 1;
+        hitEnd -= pad;
+        queryStart = pad + 1;
+
 		length = MAXNT - pad - reserv;
 	//  strncpy_s(refstr, (MAXNT * 2 + 10), temp + pad, length);
 	    strncpy(refstr, temp + pad, length);
@@ -162,6 +180,11 @@ void    ALI::writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE* 
 	else    // shrinked
 	{
 		pad = pad - 16;
+
+        hitStart = pad + 1;
+        hitEnd += pad;
+        queryStart = 1;
+
 		length = MAXNT + pad - reserv;
 		for (int i = 0; i < pad; i++)
 			refstr[i] = temp[MAXNT - pad + i];
@@ -182,6 +205,10 @@ void    ALI::writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE* 
     /*{{{*/
 	if ( flag % 2 == 1 )    // is reverse
 	{
+        k = hitStart;
+        hitStart = length - hitEnd + 1;
+        hitEnd  = length - k + 1;
+
 		for (int i = 0; i < length; i++)
 			temp[i] = refstr[length - 1 - i];
 	//  strncpy_s(refstr, (MAXNT * 2 + 10), temp, length);
@@ -209,27 +236,44 @@ void    ALI::writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE* 
 	seqstr[length] = '\0';
     
     // recover from reverse of query sequence
+    /*{{{*/
 	if (isrev == 1)
 	{
+        k = queryStart;
+        queryStart = length - queryEnd + 1;
+        queryEnd  = length - k + 1;
+
 		for (int i = 0; i < length; i++)
 			temp[i] = seqstr[length - 1 - i];
 	//  strncpy_s(seqstr, (MAXNT + 1), temp, length);
 	    strncpy(seqstr, temp, length);
 		seqstr[length] = '\0';
 	}
+    /*}}}*/
 
 	free(temp);
 	temp = NULL;
     /*}}}*/
 
-    // format the result and write into file
+    // format output
     /*{{{*/
-    // strcat_s(refstr, (MAXNT * 2 + 10), " = ");
-    // strcat_s(refstr, (MAXNT * 2 + 10), seqstr);
-    strcat(refstr, " = ");
-    strcat(refstr, seqstr);
-	fputs(refstr, rsf);
-	fputs("\r\n", rsf);
+    if( flag % 2 != isrev )
+    {
+            k = hitStart;
+            hitStart = hitEnd;
+            hitEnd = k;
+    }
+
+    sprintf( str, "\t%d\t%d\t", hitStart, hitEnd );
+    strcpy( term, refstr );
+    strcat( term, str );
+
+    sprintf( str, "\t%d\t%d", queryStart, queryEnd );
+    strcat( term, seqstr );
+    strcat( term, str );
+
+	fputs( term, rsf );
+	fputs( "\r\n", rsf );
     /*}}}*/
 
 	free(refstr);

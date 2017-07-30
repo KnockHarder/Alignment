@@ -13,7 +13,7 @@ int	main(int argc, char** argv)
     /*{{{*/
 	if (argc != 4)
 	{
-		printf("Usage: alignment namesfile seqfile resultfile\n");
+		printf("Usage: command namesfile seqfile resultfile\n");
 		exit(-1);
 	}
 

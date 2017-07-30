@@ -27,7 +27,7 @@ namespace   ALI
 
 	int    cmp_seq(const uint64_t &refer, const uint64_t &seq);
 
-    void    writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE*  rsf, int flag, bool isrev);
+    void    writeResult(const uint64_t   &refer, const SEQWITHN    &seq, FILE*  rsf, int flag, int isrev);
 
 	void    alignment(char indices_fnames[8][MAXFNAME], char seq_fname[2][MAXFNAME], const char* rsf_fname);
 
